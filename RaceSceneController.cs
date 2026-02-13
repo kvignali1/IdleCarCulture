@@ -11,9 +11,8 @@ namespace IdleCarCulture
     public class RaceSceneController : MonoBehaviour
     {
         /// <summary>
-        /// Multiplier for opponent stats scaling by tier.
+        /// Multiplier for opponent stats scaling by tier (defined in Tuning).
         /// </summary>
-        private const float OpponentStatScalePerTier = 1.1f;
 
         [SerializeField]
         private GameObject minigamePanel;
@@ -122,8 +121,8 @@ namespace IdleCarCulture
 
         private void GenerateOpponentStats()
         {
-            // Simple scaling based on tier
-            float tierScale = Mathf.Pow(OpponentStatScalePerTier, raceOpportunity.opponentTier);
+            // Simple scaling based on tier (from Tuning)
+            float tierScale = Mathf.Pow(Tuning.OPPONENT_STAT_SCALE_PER_TIER, raceOpportunity.tier);
 
             opponentStats = new ComputedCarStats
             {
@@ -206,7 +205,7 @@ namespace IdleCarCulture
             }
 
             float phaseTime = 0f;
-            while (phaseTime < 3f)
+            while (phaseTime < Tuning.MINIGAME_TIRE_HEAT_DURATION)
             {
                 phaseTime += Time.deltaTime;
 
@@ -214,15 +213,15 @@ namespace IdleCarCulture
                 {
                     holdTime += Time.deltaTime;
                     if (tireHeatMeter != null)
-                        tireHeatMeter.value = holdTime / 3f;
+                        tireHeatMeter.value = holdTime / Tuning.MINIGAME_TIRE_HEAT_DURATION;
 
-                    // Green zone: 0.4-0.6
-                    if (holdTime > 1.2f && holdTime < 1.8f)
-                        score = Mathf.Lerp(score, 1f, Time.deltaTime * 2f);
-                    else if (holdTime > 0.9f && holdTime < 2.1f)
-                        score = Mathf.Lerp(score, 0.7f, Time.deltaTime);
+                    // Green zone: Tuning.MINIGAME_TIRE_HEAT_OPTIMAL_*
+                    if (holdTime > Tuning.MINIGAME_TIRE_HEAT_OPTIMAL_START && holdTime < Tuning.MINIGAME_TIRE_HEAT_OPTIMAL_END)
+                        score = Mathf.Lerp(score, Tuning.MINIGAME_TIRE_HEAT_OPTIMAL_SCORE, Time.deltaTime * Tuning.MINIGAME_SCORE_LERP_SPEED);
+                    else if (holdTime > Tuning.MINIGAME_TIRE_HEAT_GOOD_START && holdTime < Tuning.MINIGAME_TIRE_HEAT_GOOD_END)
+                        score = Mathf.Lerp(score, Tuning.MINIGAME_TIRE_HEAT_GOOD_SCORE, Time.deltaTime);
                     else
-                        score = Mathf.Lerp(score, 0.3f, Time.deltaTime);
+                        score = Mathf.Lerp(score, Tuning.MINIGAME_TIRE_HEAT_BAD_SCORE, Time.deltaTime);
                 }
 
                 yield return null;
@@ -240,7 +239,7 @@ namespace IdleCarCulture
             Debug.Log("Launch Phase started");
             float score = 0f;
             bool tapped = false;
-            float targetTime = Random.Range(0.8f, 2f);
+            float targetTime = Random.Range(Tuning.MINIGAME_LAUNCH_TARGET_MIN, Tuning.MINIGAME_LAUNCH_TARGET_MAX);
             float elapsed = 0f;
 
             if (launchCountdownText != null)
@@ -252,12 +251,12 @@ namespace IdleCarCulture
                 launchTapButton.onClick.AddListener(() => tapped = true);
             }
 
-            while (elapsed < 3f)
+            while (elapsed < Tuning.MINIGAME_LAUNCH_DURATION)
             {
                 elapsed += Time.deltaTime;
 
                 if (launchCountdownText != null)
-                    launchCountdownText.text = Mathf.Max(0, 3f - elapsed).ToString("F1");
+                    launchCountdownText.text = Mathf.Max(0, Tuning.MINIGAME_LAUNCH_DURATION - elapsed).ToString("F1");
 
                 if (tapped && !score.Equals(0f))
                 {
@@ -270,14 +269,14 @@ namespace IdleCarCulture
                 {
                     // Calculate score based on timing
                     float diff = Mathf.Abs(elapsed - targetTime);
-                    if (diff < 0.1f)
-                        score = 1f;
-                    else if (diff < 0.3f)
-                        score = 0.8f;
-                    else if (diff < 0.5f)
-                        score = 0.5f;
+                    if (diff < Tuning.MINIGAME_LAUNCH_PERFECT_TOLERANCE)
+                        score = Tuning.MINIGAME_LAUNCH_PERFECT_SCORE;
+                    else if (diff < Tuning.MINIGAME_LAUNCH_GOOD_TOLERANCE)
+                        score = Tuning.MINIGAME_LAUNCH_GOOD_SCORE;
+                    else if (diff < Tuning.MINIGAME_LAUNCH_OK_TOLERANCE)
+                        score = Tuning.MINIGAME_LAUNCH_OK_SCORE;
                     else
-                        score = 0.2f;
+                        score = Tuning.MINIGAME_LAUNCH_BAD_SCORE;
 
                     tapped = false; // Reset for next phase
                 }
@@ -301,15 +300,15 @@ namespace IdleCarCulture
             if (shiftMarkerSlider != null)
                 shiftMarkerSlider.gameObject.SetActive(true);
 
-            // 3 shifts
-            for (int i = 0; i < 3; i++)
+            // Tuning.MINIGAME_SHIFT_COUNT shifts
+            for (int i = 0; i < Tuning.MINIGAME_SHIFT_COUNT; i++)
             {
                 currentShiftCount = i + 1;
 
                 if (shiftCountText != null)
-                    shiftCountText.text = $"Shift {currentShiftCount}/3";
+                    shiftCountText.text = $"Shift {currentShiftCount}/{Tuning.MINIGAME_SHIFT_COUNT}";
 
-                shiftMarkerPosition = Random.Range(0.3f, 0.7f);
+                shiftMarkerPosition = Random.Range(Tuning.MINIGAME_SHIFT_MARKER_MIN, Tuning.MINIGAME_SHIFT_MARKER_MAX);
                 float shiftScore = 0f;
                 bool tapped = false;
                 float shiftTime = 0f;
@@ -320,7 +319,7 @@ namespace IdleCarCulture
                     shiftTapButton.onClick.AddListener(() => tapped = true);
                 }
 
-                while (shiftTime < 2f && !tapped)
+                while (shiftTime < Tuning.MINIGAME_SHIFT_DURATION && !tapped)
                 {
                     shiftTime += Time.deltaTime;
 
@@ -338,21 +337,21 @@ namespace IdleCarCulture
                 {
                     // Calculate score based on marker distance to target
                     float diff = Mathf.Abs(shiftMarkerPosition - (shiftMarkerSlider != null ? shiftMarkerSlider.value : 0.5f));
-                    if (diff < 0.1f)
-                        shiftScore = 1f;
-                    else if (diff < 0.2f)
-                        shiftScore = 0.8f;
-                    else if (diff < 0.4f)
-                        shiftScore = 0.5f;
+                    if (diff < Tuning.MINIGAME_SHIFT_PERFECT_TOLERANCE)
+                        shiftScore = Tuning.MINIGAME_SHIFT_PERFECT_SCORE;
+                    else if (diff < Tuning.MINIGAME_SHIFT_GOOD_TOLERANCE)
+                        shiftScore = Tuning.MINIGAME_SHIFT_GOOD_SCORE;
+                    else if (diff < Tuning.MINIGAME_SHIFT_OK_TOLERANCE)
+                        shiftScore = Tuning.MINIGAME_SHIFT_OK_SCORE;
                     else
-                        shiftScore = 0.2f;
+                        shiftScore = Tuning.MINIGAME_SHIFT_BAD_SCORE;
                 }
 
                 totalScore += shiftScore;
-                yield return new WaitForSeconds(0.5f);
+                yield return new WaitForSeconds(Tuning.MINIGAME_SHIFT_DELAY);
             }
 
-            playerSkillResult.shiftScore = Mathf.Clamp01(totalScore / 3f);
+            playerSkillResult.shiftScore = Mathf.Clamp01(totalScore / Tuning.MINIGAME_SHIFT_COUNT);
             Debug.Log($"Shift Score: {playerSkillResult.shiftScore:F2}");
 
             if (shiftMarkerSlider != null)

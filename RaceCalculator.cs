@@ -20,18 +20,18 @@ namespace IdleCarCulture
 
             float pr = powerScore - weightPenalty + gripBonus + suspensionBonus;
 
-            // Event-specific modifiers
+            // Event-specific modifiers from Tuning
             switch (eventType)
             {
                 case RaceEventType.IllegalDig:
                 case RaceEventType.IllegalRoll:
                     // Illegal races emphasize power and acceleration
-                    pr *= 1.1f;
+                    pr *= Tuning.RACE_PR_ILLEGAL_MULTIPLIER;
                     break;
                 case RaceEventType.LegalLocal:
                 case RaceEventType.LegalRegional:
                     // Legal races slightly reduce raw power emphasis
-                    pr *= 0.95f;
+                    pr *= Tuning.RACE_PR_LEGAL_MULTIPLIER;
                     break;
             }
 
@@ -58,22 +58,22 @@ namespace IdleCarCulture
             float playerPR = ComputePR(playerStats, eventType);
             float opponentPR = ComputePR(opponentStats, eventType);
 
-            // Apply skill multiplier based on event legality
+            // Apply skill multiplier based on event legality (from Tuning)
             float skillMultiplier = (eventType == RaceEventType.IllegalDig || eventType == RaceEventType.IllegalRoll)
-                ? (1f + 0.10f * skill.Overall())
-                : (1f + 0.15f * skill.Overall());
+                ? (1f + Tuning.RACE_SKILL_ILLEGAL_MULTIPLIER * skill.Overall())
+                : (1f + Tuning.RACE_SKILL_LEGAL_MULTIPLIER * skill.Overall());
 
             playerPR *= skillMultiplier;
 
             // Apply prestige bonus (flat addition)
             playerPR += prestigeBonus;
 
-            // Apply small randomness (+/- 3%)
-            float randomness = Random.Range(0.97f, 1.03f);
+            // Apply small randomness from Tuning (e.g., ±3%)
+            float randomness = Random.Range(Tuning.RACE_RANDOMNESS_MIN, Tuning.RACE_RANDOMNESS_MAX);
             playerPR *= randomness;
 
             // Opponent gets slight randomness too
-            float opponentRandomness = Random.Range(0.97f, 1.03f);
+            float opponentRandomness = Random.Range(Tuning.RACE_RANDOMNESS_MIN, Tuning.RACE_RANDOMNESS_MAX);
             opponentPR *= opponentRandomness;
 
             // Determine winner
@@ -82,8 +82,8 @@ namespace IdleCarCulture
             // Compute payout multiplier based on difficulty
             float prRatio = opponentPR > 0 ? playerPR / opponentPR : 1f;
             float payoutMultiplier = playerWins
-                ? Mathf.Clamp(1.5f / prRatio, 0.5f, 3.0f)  // Harder opponents = higher payout
-                : 0.1f;  // Losing gives minimal payout
+                ? Mathf.Clamp(Tuning.RACE_PAYOUT_WIN_BASELINE / prRatio, Tuning.RACE_PAYOUT_WIN_MULTIPLIER_MIN, Tuning.RACE_PAYOUT_WIN_MULTIPLIER_MAX)
+                : Tuning.RACE_PAYOUT_LOSS_MULTIPLIER;
 
             return new RaceOutcome
             {

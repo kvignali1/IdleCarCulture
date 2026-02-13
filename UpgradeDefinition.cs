@@ -17,8 +17,9 @@ namespace IdleCarCulture
 
         /// <summary>
         /// Maximum level for this upgrade.
+        /// Default from Tuning.UPGRADE_MAX_LEVEL.
         /// </summary>
-        public int maxLevel = 5;
+        public int maxLevel = Tuning.UPGRADE_MAX_LEVEL;
 
         /// <summary>
         /// Base cost for level 1.
@@ -27,8 +28,9 @@ namespace IdleCarCulture
 
         /// <summary>
         /// Exponential multiplier applied per level to compute cost.
+        /// Default from Tuning.UPGRADE_COST_EXPONENT.
         /// </summary>
-        public float costExponent = 1.8f;
+        public float costExponent = Tuning.UPGRADE_COST_EXPONENT;
 
         /// <summary>
         /// Per-level stat modifiers. Index 0 corresponds to level 1.

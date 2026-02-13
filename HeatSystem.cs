@@ -10,17 +10,13 @@ namespace IdleCarCulture
     {
         /// <summary>
         /// Heat threshold percentages for police event triggers.
+        /// See Tuning class for adjustable thresholds.
         /// </summary>
-        private const float LowHeatThreshold = 30f;
-        private const float MediumHeatThreshold = 60f;
-        private const float HighHeatThreshold = 85f;
 
         /// <summary>
         /// Base trigger chance per update at different heat levels.
+        /// See Tuning class for adjustable chances.
         /// </summary>
-        private const float LowHeatTriggerChance = 0.01f;
-        private const float MediumHeatTriggerChance = 0.05f;
-        private const float HighHeatTriggerChance = 0.15f;
 
         /// <summary>
         /// Adds heat to the player profile from an illegal race.
@@ -97,12 +93,12 @@ namespace IdleCarCulture
             float heat = profile.heat;
             float triggerChance = 0f;
 
-            if (heat >= HighHeatThreshold)
-                triggerChance = HighHeatTriggerChance;
-            else if (heat >= MediumHeatThreshold)
-                triggerChance = MediumHeatTriggerChance;
-            else if (heat >= LowHeatThreshold)
-                triggerChance = LowHeatTriggerChance;
+            if (heat >= Tuning.HEAT_THRESHOLD_HIGH)
+                triggerChance = Tuning.HEAT_TRIGGER_CHANCE_HIGH;
+            else if (heat >= Tuning.HEAT_THRESHOLD_MEDIUM)
+                triggerChance = Tuning.HEAT_TRIGGER_CHANCE_MEDIUM;
+            else if (heat >= Tuning.HEAT_THRESHOLD_LOW)
+                triggerChance = Tuning.HEAT_TRIGGER_CHANCE_LOW;
 
             bool triggered = Random.value < triggerChance;
 
@@ -133,7 +129,7 @@ namespace IdleCarCulture
             }
 
             // Escape chance based on car grip and suspension (handling)
-            float escapeChanceBase = 0.3f + (stats.grip + stats.suspension) * 0.001f;
+            float escapeChanceBase = Tuning.POLICE_ESCAPE_CHANCE_BASE + (stats.grip + stats.suspension) * Tuning.POLICE_ESCAPE_STAT_BONUS;
             escapeChanceBase = Mathf.Clamp01(escapeChanceBase);
 
             bool escaped = Random.value < escapeChanceBase;
@@ -143,13 +139,13 @@ namespace IdleCarCulture
 
             if (escaped)
             {
-                heatLost = profile.heat * 0.5f; // Lose 50% heat on escape
+                heatLost = profile.heat * Tuning.POLICE_ESCAPE_HEAT_REDUCTION_PERCENT;
                 Debug.Log($"Escaped police! Heat lost: {heatLost:F1}");
             }
             else
             {
                 // Fine scales with current heat
-                fineAmount = (long)(500 + profile.heat * 50);
+                fineAmount = (long)(Tuning.POLICE_BASE_FINE + profile.heat * Tuning.POLICE_FINE_HEAT_MULTIPLIER);
                 heatLost = profile.heat; // Lose all heat if caught
                 Debug.Log($"Caught by police! Fine: {fineAmount}, Heat lost: {heatLost:F1}");
             }

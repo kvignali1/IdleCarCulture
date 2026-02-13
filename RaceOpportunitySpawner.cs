@@ -22,14 +22,8 @@ namespace IdleCarCulture
         private float spawnIntervalRandomness = 3f;
 
         /// <summary>
-        /// Cred required per illegal tier unlock (e.g., tier 2 at 200 cred).
+        /// Tier unlock thresholds defined in Tuning class.
         /// </summary>
-        private const int CredPerTierUnlock = 100;
-
-        /// <summary>
-        /// Reputation required per legal tier unlock (e.g., tier 2 at 300 rep).
-        /// </summary>
-        private const int ReputationPerTierUnlock = 150;
 
         /// <summary>
         /// Fired when a new race opportunity is spawned.
@@ -135,13 +129,13 @@ namespace IdleCarCulture
             {
                 case RaceEventType.IllegalDig:
                 case RaceEventType.IllegalRoll:
-                    // Illegal tiers unlock at 100, 200, 300, 400 cred
-                    maxTier = Mathf.Min(profile.cred / CredPerTierUnlock, 4);
+                    // Illegal tiers unlock at Tuning.OPPORTUNITY_CRED_PER_TIER, 2x, 3x, 4x cred
+                    maxTier = Mathf.Min(profile.cred / Tuning.OPPORTUNITY_CRED_PER_TIER, 4);
                     break;
                 case RaceEventType.LegalLocal:
                 case RaceEventType.LegalRegional:
-                    // Legal tiers unlock at 150, 300, 450, 600 reputation
-                    maxTier = Mathf.Min(profile.reputation / ReputationPerTierUnlock, 4);
+                    // Legal tiers unlock at Tuning.OPPORTUNITY_REPUTATION_PER_TIER, 2x, 3x, 4x reputation
+                    maxTier = Mathf.Min(profile.reputation / Tuning.OPPORTUNITY_REPUTATION_PER_TIER, 4);
                     break;
             }
 
@@ -150,13 +144,13 @@ namespace IdleCarCulture
 
         private long GenerateBetSuggestion(int tier, long playerMoney)
         {
-            // Base bet scales with tier (500 * (tier + 1))
-            long baseBet = 500 * (tier + 1);
+            // Base bet scales with tier (Tuning.OPPORTUNITY_BASE_BET * (tier + 1))
+            long baseBet = Tuning.OPPORTUNITY_BASE_BET * (tier + 1);
 
-            // Scale based on player wealth (suggestion is 5-10% of liquid cash)
-            long wealthScaled = Mathf.Max(baseBet, (long)(playerMoney * 0.05f));
+            // Scale based on player wealth (suggestion is Tuning % of liquid cash)
+            long wealthScaled = Mathf.Max(baseBet, (long)(playerMoney * Tuning.OPPORTUNITY_BET_MIN_PERCENT));
 
-            return Mathf.Min(wealthScaled, playerMoney / 2);
+            return Mathf.Min(wealthScaled, (long)(playerMoney * Tuning.OPPORTUNITY_BET_MAX_MONEY_FRACTION));
         }
 
         private string GenerateDisplayText(RaceEventType eventType, int tier)

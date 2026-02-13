@@ -25,12 +25,13 @@ namespace IdleCarCulture
         public float shiftScore;
 
         /// <summary>
-        /// Returns the weighted overall score: launch 0.4, shift 0.4, heat 0.2.
+        /// Returns the weighted overall score based on Tuning weights:
+        /// Launch (Tuning.SKILL_WEIGHT_LAUNCH), Shift (Tuning.SKILL_WEIGHT_SHIFT), Heat (Tuning.SKILL_WEIGHT_TIRE_HEAT).
         /// The result is clamped to the range [0,1].
         /// </summary>
         public float Overall()
         {
-            float overall = launchScore * 0.4f + shiftScore * 0.4f + tireHeatScore * 0.2f;
+            float overall = launchScore * Tuning.SKILL_WEIGHT_LAUNCH + shiftScore * Tuning.SKILL_WEIGHT_SHIFT + tireHeatScore * Tuning.SKILL_WEIGHT_TIRE_HEAT;
             return Mathf.Clamp01(overall);
         }
     }

@@ -8,28 +8,9 @@ namespace IdleCarCulture
     public class PrestigeSystem : MonoBehaviour
     {
         /// <summary>
-        /// Money threshold required to prestige.
-        /// </summary>
-        private const long MoneyPrestigeThreshold = 500000;
-
-        /// <summary>
-        /// Reputation threshold required to prestige (alternative).
-        /// </summary>
-        private const int ReputationPrestigeThreshold = 1000;
-
-        /// <summary>
-        /// Cred threshold required to prestige (alternative).
-        /// </summary>
-        private const int CredPrestigeThreshold = 500;
-
-        /// <summary>
-        /// Starting money after prestige.
-        /// </summary>
-        private const long StartingMoney = 5000;
-
-        /// <summary>
         /// Determines if the player can prestige based on current profile stats.
         /// Returns true if money >= threshold OR (reputation >= threshold OR cred >= threshold).
+        /// Thresholds defined in Tuning class.
         /// </summary>
         public bool CanPrestige(PlayerProfile profile)
         {
@@ -39,9 +20,9 @@ namespace IdleCarCulture
                 return false;
             }
 
-            bool moneyThreshold = profile.money >= MoneyPrestigeThreshold;
-            bool reputationThreshold = profile.reputation >= ReputationPrestigeThreshold;
-            bool credThreshold = profile.cred >= CredPrestigeThreshold;
+            bool moneyThreshold = profile.money >= Tuning.PRESTIGE_MONEY_THRESHOLD;
+            bool reputationThreshold = profile.reputation >= Tuning.PRESTIGE_REPUTATION_THRESHOLD;
+            bool credThreshold = profile.cred >= Tuning.PRESTIGE_CRED_THRESHOLD;
 
             return moneyThreshold || reputationThreshold || credThreshold;
         }
@@ -76,7 +57,7 @@ namespace IdleCarCulture
             profile.prestigeCurrency++;
 
             // Reset progress stats
-            profile.money = StartingMoney;
+            profile.money = Tuning.PRESTIGE_STARTING_MONEY;
             profile.heat = 0f;
             profile.cred = 0;
             profile.reputation = 0;
@@ -100,7 +81,7 @@ namespace IdleCarCulture
         /// <summary>
         /// Computed bonus: cost reduction percentage based on prestige level.
         /// Scales from 0% at prestige 0 to higher values per prestige rank.
-        /// Formula: 5% per prestige level.
+        /// Formula: Tuning.PRESTIGE_COST_REDUCTION_PERCENT per prestige level.
         /// </summary>
         public float GetCostReductionPercent()
         {
@@ -110,12 +91,12 @@ namespace IdleCarCulture
             var profile = manager.GetProfile();
             if (profile == null) return 0f;
 
-            return profile.prestigeCurrency * 5f;
+            return profile.prestigeCurrency * Tuning.PRESTIGE_COST_REDUCTION_PERCENT * 100f;
         }
 
         /// <summary>
         /// Computed bonus: heat gain reduction percentage from illegal races.
-        /// Formula: 3% per prestige level.
+        /// Formula: Tuning.PRESTIGE_HEAT_REDUCTION_PERCENT per prestige level.
         /// </summary>
         public float GetHeatGainReductionPercent()
         {
@@ -125,12 +106,12 @@ namespace IdleCarCulture
             var profile = manager.GetProfile();
             if (profile == null) return 0f;
 
-            return profile.prestigeCurrency * 3f;
+            return profile.prestigeCurrency * Tuning.PRESTIGE_HEAT_REDUCTION_PERCENT * 100f;
         }
 
         /// <summary>
         /// Computed bonus: income multiplier from races.
-        /// Formula: 10% per prestige level.
+        /// Formula: Tuning.PRESTIGE_INCOME_BONUS_PERCENT per prestige level.
         /// </summary>
         public float GetIncomeBonusPercent()
         {
@@ -140,7 +121,7 @@ namespace IdleCarCulture
             var profile = manager.GetProfile();
             if (profile == null) return 0f;
 
-            return profile.prestigeCurrency * 10f;
+            return profile.prestigeCurrency * Tuning.PRESTIGE_INCOME_BONUS_PERCENT * 100f;
         }
 
         /// <summary>

@@ -8,15 +8,6 @@ namespace IdleCarCulture
     /// </summary>
     public class EconomyManager : MonoBehaviour
     {
-        /// <summary>
-        /// Base payout per tier for illegal events.
-        /// </summary>
-        private static readonly int[] IllegalBasePayout = { 500, 1000, 1500, 2500, 4000 };
-
-        /// <summary>
-        /// Base payout per tier for legal events.
-        /// </summary>
-        private static readonly int[] LegalBasePayout = { 1000, 2000, 3500, 5500, 8000 };
 
         /// <summary>
         /// Attempts to spend the specified amount of money.
@@ -87,9 +78,9 @@ namespace IdleCarCulture
         /// payout multiplier, and prestige currency bonus.
         /// 
         /// Formula:
-        /// - Base payout determined by event type (illegal vs legal) and tier (0-4)
+        /// - Base payout determined by event type (illegal vs legal) and tier (0-4) from Tuning
         /// - Multiplied by payoutMultiplier
-        /// - Prestige bonus: +2% per prestigeCurrency
+        /// - Prestige bonus: Tuning.PRESTIGE_PAYOUT_BONUS_PERCENT per prestigeCurrency
         /// - Only awarded if player won
         /// </summary>
         public long CalculateRacePayout(
@@ -107,16 +98,16 @@ namespace IdleCarCulture
 
             // Select base payout table based on event type
             int[] basePayoutTable = (eventType == RaceEventType.IllegalDig || eventType == RaceEventType.IllegalRoll)
-                ? IllegalBasePayout
-                : LegalBasePayout;
+                ? Tuning.ILLEGAL_BASE_PAYOUT
+                : Tuning.LEGAL_BASE_PAYOUT;
 
             long basePayout = basePayoutTable[opponentTier];
 
             // Apply payout multiplier
             float adjustedPayout = basePayout * payoutMultiplier;
 
-            // Apply prestige bonus: +2% per prestigeCurrency
-            float prestigeMultiplier = 1f + (0.02f * prestigeCurrency);
+            // Apply prestige bonus: Tuning.PRESTIGE_PAYOUT_BONUS_PERCENT per prestigeCurrency
+            float prestigeMultiplier = 1f + (Tuning.PRESTIGE_PAYOUT_BONUS_PERCENT * prestigeCurrency);
             adjustedPayout *= prestigeMultiplier;
 
             long finalPayout = (long)adjustedPayout;
