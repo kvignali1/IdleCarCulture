@@ -4,15 +4,86 @@ namespace IdleCarCulture
 {
     /// <summary>
     /// System for purchasing and applying car upgrades.
+    /// Supports upgrading any car by carId with prestige cost reductions.
     /// </summary>
     public class UpgradeSystem : MonoBehaviour
     {
         /// <summary>
-        /// Attempts to purchase an upgrade for the active car.
-        /// Returns true if successful, false if insufficient funds or already at max level.
+        /// Returns the cost to upgrade a specific car, or -1 if at max level or error.
+        /// Applies prestige cost reduction from PrestigeSystem.
         /// </summary>
-        public bool TryUpgrade(UpgradeType upgradeType)
+        public long GetUpgradeCost(string carId, UpgradeType upgradeType)
         {
+            if (string.IsNullOrEmpty(carId))
+            {
+                Debug.LogWarning("GetUpgradeCost called with empty carId.");
+                return -1;
+            }
+
+            var manager = GameManager.Instance;
+            if (manager == null)
+            {
+                Debug.LogWarning("GameManager not found.");
+                return -1;
+            }
+
+            var profile = manager.GetProfile();
+            if (profile == null)
+            {
+                Debug.LogWarning("PlayerProfile not found.");
+                return -1;
+            }
+
+            // Get upgrade state for the specific car
+            var upgradeState = profile.GetOrCreateUpgradeState(carId);
+            if (upgradeState == null)
+            {
+                Debug.LogWarning($"Upgrade state not found for car {carId}.");
+                return -1;
+            }
+
+            // Find upgrade definition
+            UpgradeDefinition upgradeDef = null;
+            foreach (var def in manager.upgradeDefs)
+            {
+                if (def != null && def.upgradeType == upgradeType)
+                {
+                    upgradeDef = def;
+                    break;
+                }
+            }
+
+            if (upgradeDef == null)
+            {
+                Debug.LogWarning($"Upgrade definition not found for {upgradeType}");
+                return -1;
+            }
+
+            int currentLevel = upgradeState.GetLevel(upgradeType);
+            if (currentLevel >= upgradeDef.maxLevel)
+                return -1;
+
+            // Apply prestige reduction
+            var prestigeSystem = FindObjectOfType<PrestigeSystem>();
+            float costMultiplier = prestigeSystem != null ? prestigeSystem.GetCostMultiplier() : 1f;
+            long cost = (long)(upgradeDef.GetCostForNextLevel(currentLevel) * costMultiplier);
+
+            return cost;
+        }
+
+        /// <summary>
+        /// Attempts to purchase an upgrade for the specified car.
+        /// Returns true if successful, false if insufficient funds or already at max level.
+        /// Applies prestige cost reduction and saves after successful upgrade.
+        /// </summary>
+        public bool TryUpgrade(string carId, UpgradeType upgradeType)
+        {
+            if (string.IsNullOrEmpty(carId))
+            {
+                Debug.LogWarning("TryUpgrade called with empty carId.");
+                return false;
+            }
+
             var manager = GameManager.Instance;
             if (manager == null)
             {
@@ -27,14 +98,15 @@ namespace IdleCarCulture
                 return false;
             }
 
-            var upgradeState = manager.GetActiveUpgradeState();
+            // Get upgrade state for the specific car
+            var upgradeState = profile.GetOrCreateUpgradeState(carId);
             if (upgradeState == null)
             {
-                Debug.LogError("Active upgrade state not found.");
+                Debug.LogError($"Upgrade state not found for car {carId}.");
                 return false;
             }
 
-            // Find the upgrade definition
+            // Find upgrade definition
             UpgradeDefinition upgradeDef = null;
             foreach (var def in manager.upgradeDefs)
             {
@@ -51,7 +123,6 @@ namespace IdleCarCulture
                 return false;
             }
 
-            // Get current level
             int currentLevel = upgradeState.GetLevel(upgradeType);
 
             // Check if at max level
@@ -64,7 +135,7 @@ namespace IdleCarCulture
             // Calculate cost with prestige reduction
             var prestigeSystem = FindObjectOfType<PrestigeSystem>();
             float costMultiplier = prestigeSystem != null ? prestigeSystem.GetCostMultiplier() : 1f;
-            int cost = (int)(upgradeDef.GetCostForNextLevel(currentLevel) * costMultiplier);
+            long cost = (long)(upgradeDef.GetCostForNextLevel(currentLevel) * costMultiplier);
 
             if (profile.money < cost)
             {
@@ -84,78 +155,8 @@ namespace IdleCarCulture
             upgradeState.SetLevel(upgradeType, currentLevel + 1);
             manager.Save();
 
-            Debug.Log($"Upgrade successful: {upgradeType} to level {currentLevel + 1}. Cost: {cost}");
+            Debug.Log($"Upgrade successful: {carId} - {upgradeType} to level {currentLevel + 1}. Cost: {cost}");
             return true;
-        }
-
-        /// <summary>
-        /// Returns the cost to upgrade the specified type, or -1 if at max level or error.
-        /// </summary>
-        public int GetUpgradeCost(UpgradeType upgradeType)
-        {
-            var manager = GameManager.Instance;
-            if (manager == null)
-                return -1;
-
-            var upgradeState = manager.GetActiveUpgradeState();
-            if (upgradeState == null)
-                return -1;
-
-            UpgradeDefinition upgradeDef = null;
-            foreach (var def in manager.upgradeDefs)
-            {
-                if (def != null && def.upgradeType == upgradeType)
-                {
-                    upgradeDef = def;
-                    break;
-                }
-            }
-
-            if (upgradeDef == null)
-                return -1;
-
-            int currentLevel = upgradeState.GetLevel(upgradeType);
-            if (currentLevel >= upgradeDef.maxLevel)
-                return -1;
-
-            // Apply prestige reduction
-            var prestigeSystem = FindObjectOfType<PrestigeSystem>();
-            float costMultiplier = prestigeSystem != null ? prestigeSystem.GetCostMultiplier() : 1f;
-            return (int)(upgradeDef.GetCostForNextLevel(currentLevel) * costMultiplier);
-        }
-
-        /// <summary>
-        /// Returns the current level of an upgrade type, or 0 if none found.
-        /// </summary>
-        public int GetUpgradeLevel(UpgradeType upgradeType)
-        {
-            var manager = GameManager.Instance;
-            if (manager == null)
-                return 0;
-
-            var upgradeState = manager.GetActiveUpgradeState();
-            if (upgradeState == null)
-                return 0;
-
-            return upgradeState.GetLevel(upgradeType);
-        }
-
-        /// <summary>
-        /// Returns the max level for an upgrade type, or 0 if not found.
-        /// </summary>
-        public int GetMaxLevel(UpgradeType upgradeType)
-        {
-            var manager = GameManager.Instance;
-            if (manager == null)
-                return 0;
-
-            foreach (var def in manager.upgradeDefs)
-            {
-                if (def != null && def.upgradeType == upgradeType)
-                    return def.maxLevel;
-            }
-
-            return 0;
         }
     }
 }

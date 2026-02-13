@@ -115,16 +115,22 @@ namespace IdleCarCulture
             if (upgradeSystem == null)
                 return;
 
-            int currentLevel = upgradeSystem.GetUpgradeLevel(upgradeType);
-            int maxLevel = upgradeSystem.GetMaxLevel(upgradeType);
+            var manager = GameManager.Instance;
+            if (manager == null)
+                return;
 
-            if (currentLevel >= maxLevel)
+            var carData = manager.GetActiveCarData();
+            if (carData == null)
+                return;
+
+            long cost = upgradeSystem.GetUpgradeCost(carData.id, upgradeType);
+            if (cost < 0)
             {
-                Debug.LogWarning($"{upgradeType} already at max level {maxLevel}");
+                Debug.LogWarning($"{upgradeType} already at max level");
                 return;
             }
 
-            if (upgradeSystem.TryUpgrade(upgradeType))
+            if (upgradeSystem.TryUpgrade(carData.id, upgradeType))
             {
                 Debug.Log($"Upgrade successful: {upgradeType}");
                 RefreshUI();
@@ -243,9 +249,37 @@ namespace IdleCarCulture
 
         private void RefreshUpgradeDisplay(UpgradeType upgradeType, TextMeshProUGUI levelText, Button upgradeButton)
         {
-            int currentLevel = upgradeSystem.GetUpgradeLevel(upgradeType);
-            int maxLevel = upgradeSystem.GetMaxLevel(upgradeType);
-            int cost = upgradeSystem.GetUpgradeCost(upgradeType);
+            var manager = GameManager.Instance;
+            if (manager == null)
+                return;
+
+            var carData = manager.GetActiveCarData();
+            if (carData == null)
+                return;
+
+            // Get upgrade state for this car
+            var profile = manager.GetProfile();
+            if (profile == null)
+                return;
+
+            var upgradeState = profile.GetOrCreateUpgradeState(carData.id);
+            if (upgradeState == null)
+                return;
+
+            int currentLevel = upgradeState.GetLevel(upgradeType);
+            int maxLevel = 5; // Default max level
+
+            // Find max level from definition
+            foreach (var def in manager.upgradeDefs)
+            {
+                if (def != null && def.upgradeType == upgradeType)
+                {
+                    maxLevel = def.maxLevel;
+                    break;
+                }
+            }
+
+            long cost = upgradeSystem.GetUpgradeCost(carData.id, upgradeType);
 
             if (levelText != null)
                 levelText.text = $"Level: {currentLevel}/{maxLevel}";
