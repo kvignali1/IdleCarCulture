@@ -1,0 +1,279 @@
+using TMPro;
+using UnityEngine;
+using UnityEngine.UI;
+
+namespace IdleCarCulture
+{
+    /// <summary>
+    /// Garage UI for viewing owned cars, selecting active car, viewing stats, and purchasing upgrades.
+    /// </summary>
+    public class GarageUI : MonoBehaviour
+    {
+        [SerializeField]
+        private ScrollRect carListScroll;
+
+        [SerializeField]
+        private Transform carListContent;
+
+        [SerializeField]
+        private TextMeshProUGUI activeCarNameText;
+
+        [SerializeField]
+        private TextMeshProUGUI prText;
+
+        [SerializeField]
+        private TextMeshProUGUI statsText;
+
+        // Upgrade buttons and level displays
+        [SerializeField]
+        private Button engineUpgradeButton;
+
+        [SerializeField]
+        private TextMeshProUGUI engineLevelText;
+
+        [SerializeField]
+        private Button turboUpgradeButton;
+
+        [SerializeField]
+        private TextMeshProUGUI turboLevelText;
+
+        [SerializeField]
+        private Button transmissionUpgradeButton;
+
+        [SerializeField]
+        private TextMeshProUGUI transmissionLevelText;
+
+        [SerializeField]
+        private Button tiresUpgradeButton;
+
+        [SerializeField]
+        private TextMeshProUGUI tiresLevelText;
+
+        [SerializeField]
+        private Button suspensionUpgradeButton;
+
+        [SerializeField]
+        private TextMeshProUGUI suspensionLevelText;
+
+        [SerializeField]
+        private Prefab carListItemPrefab;
+
+        private UpgradeSystem upgradeSystem;
+
+        private void Start()
+        {
+            upgradeSystem = GetComponent<UpgradeSystem>() ?? FindObjectOfType<UpgradeSystem>();
+            if (upgradeSystem == null)
+            {
+                upgradeSystem = gameObject.AddComponent<UpgradeSystem>();
+            }
+
+            SetupUpgradeButtons();
+            RefreshUI();
+        }
+
+        private void OnEnable()
+        {
+            var manager = GameManager.Instance;
+            if (manager != null)
+            {
+                manager.OnActiveCarChanged += OnActiveCarChanged;
+                manager.OnMoneyChanged += OnMoneyChanged;
+            }
+        }
+
+        private void OnDisable()
+        {
+            var manager = GameManager.Instance;
+            if (manager != null)
+            {
+                manager.OnActiveCarChanged -= OnActiveCarChanged;
+                manager.OnMoneyChanged -= OnMoneyChanged;
+            }
+        }
+
+        private void SetupUpgradeButtons()
+        {
+            if (engineUpgradeButton != null)
+                engineUpgradeButton.onClick.AddListener(() => AttemptUpgrade(UpgradeType.Engine));
+
+            if (turboUpgradeButton != null)
+                turboUpgradeButton.onClick.AddListener(() => AttemptUpgrade(UpgradeType.Turbo));
+
+            if (transmissionUpgradeButton != null)
+                transmissionUpgradeButton.onClick.AddListener(() => AttemptUpgrade(UpgradeType.Transmission));
+
+            if (tiresUpgradeButton != null)
+                tiresUpgradeButton.onClick.AddListener(() => AttemptUpgrade(UpgradeType.Tires));
+
+            if (suspensionUpgradeButton != null)
+                suspensionUpgradeButton.onClick.AddListener(() => AttemptUpgrade(UpgradeType.Suspension));
+        }
+
+        private void AttemptUpgrade(UpgradeType upgradeType)
+        {
+            if (upgradeSystem == null)
+                return;
+
+            int currentLevel = upgradeSystem.GetUpgradeLevel(upgradeType);
+            int maxLevel = upgradeSystem.GetMaxLevel(upgradeType);
+
+            if (currentLevel >= maxLevel)
+            {
+                Debug.LogWarning($"{upgradeType} already at max level {maxLevel}");
+                return;
+            }
+
+            if (upgradeSystem.TryUpgrade(upgradeType))
+            {
+                Debug.Log($"Upgrade successful: {upgradeType}");
+                RefreshUI();
+            }
+            else
+            {
+                Debug.LogWarning($"Upgrade failed: {upgradeType}");
+            }
+        }
+
+        public void RefreshUI()
+        {
+            RefreshOwnedCarsList();
+            RefreshActiveCarInfo();
+            RefreshUpgradeButtons();
+        }
+
+        private void RefreshOwnedCarsList()
+        {
+            if (carListContent == null)
+                return;
+
+            var manager = GameManager.Instance;
+            if (manager == null)
+                return;
+
+            var profile = manager.GetProfile();
+            if (profile == null)
+                return;
+
+            // Clear existing list
+            foreach (Transform child in carListContent)
+                Destroy(child.gameObject);
+
+            // Populate with owned cars
+            if (profile.ownedCarIds != null)
+            {
+                foreach (var carId in profile.ownedCarIds)
+                {
+                    var carData = manager.GetCar(carId);
+                    if (carData != null)
+                    {
+                        AddCarListItem(carData, carId == profile.activeCarId);
+                    }
+                }
+            }
+        }
+
+        private void AddCarListItem(CarData carData, bool isActive)
+        {
+            if (carListContent == null)
+                return;
+
+            var itemGo = new GameObject($"CarItem_{carData.id}");
+            itemGo.transform.SetParent(carListContent, false);
+
+            var layout = itemGo.AddComponent<LayoutElement>();
+            layout.preferredHeight = 60f;
+
+            var button = itemGo.AddComponent<Button>();
+            var textComp = itemGo.AddComponent<TextMeshProUGUI>();
+            textComp.text = carData.displayName + (isActive ? " (Active)" : "");
+            textComp.alignment = TextAlignmentOptions.Center;
+
+            button.onClick.AddListener(() =>
+            {
+                GameManager.Instance?.SetActiveCar(carData.id);
+            });
+        }
+
+        private void RefreshActiveCarInfo()
+        {
+            var manager = GameManager.Instance;
+            if (manager == null)
+                return;
+
+            var carData = manager.GetActiveCarData();
+            if (carData == null)
+            {
+                if (activeCarNameText != null)
+                    activeCarNameText.text = "No active car";
+                if (prText != null)
+                    prText.text = "PR: --";
+                if (statsText != null)
+                    statsText.text = "--";
+                return;
+            }
+
+            if (activeCarNameText != null)
+                activeCarNameText.text = carData.displayName;
+
+            var stats = manager.ComputeActiveStats();
+            if (stats.HasValue)
+            {
+                float pr = RaceCalculator.ComputePR(stats.Value, RaceEventType.LegalLocal);
+                if (prText != null)
+                    prText.text = $"PR: {pr:F0}";
+
+                if (statsText != null)
+                    statsText.text = $"HP: {stats.Value.hp} | TQ: {stats.Value.torque} | Weight: {stats.Value.weight}\n" +
+                        $"Grip: {stats.Value.grip} | Suspension: {stats.Value.suspension}";
+            }
+        }
+
+        private void RefreshUpgradeButtons()
+        {
+            if (upgradeSystem == null)
+                return;
+
+            RefreshUpgradeDisplay(UpgradeType.Engine, engineLevelText, engineUpgradeButton);
+            RefreshUpgradeDisplay(UpgradeType.Turbo, turboLevelText, turboUpgradeButton);
+            RefreshUpgradeDisplay(UpgradeType.Transmission, transmissionLevelText, transmissionUpgradeButton);
+            RefreshUpgradeDisplay(UpgradeType.Tires, tiresLevelText, tiresUpgradeButton);
+            RefreshUpgradeDisplay(UpgradeType.Suspension, suspensionLevelText, suspensionUpgradeButton);
+        }
+
+        private void RefreshUpgradeDisplay(UpgradeType upgradeType, TextMeshProUGUI levelText, Button upgradeButton)
+        {
+            int currentLevel = upgradeSystem.GetUpgradeLevel(upgradeType);
+            int maxLevel = upgradeSystem.GetMaxLevel(upgradeType);
+            int cost = upgradeSystem.GetUpgradeCost(upgradeType);
+
+            if (levelText != null)
+                levelText.text = $"Level: {currentLevel}/{maxLevel}";
+
+            if (upgradeButton != null)
+            {
+                bool isAtMax = currentLevel >= maxLevel;
+                upgradeButton.interactable = !isAtMax;
+
+                var textComp = upgradeButton.GetComponentInChildren<TextMeshProUGUI>();
+                if (textComp != null)
+                {
+                    if (isAtMax)
+                        textComp.text = "MAX";
+                    else
+                        textComp.text = $"Upgrade\n${cost:N0}";
+                }
+            }
+        }
+
+        private void OnActiveCarChanged(string carId)
+        {
+            RefreshUI();
+        }
+
+        private void OnMoneyChanged(long amount)
+        {
+            RefreshUpgradeButtons();
+        }
+    }
+}
