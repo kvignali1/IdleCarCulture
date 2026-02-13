@@ -38,6 +38,11 @@ namespace IdleCarCulture
         private PlayerProfile _playerProfile;
 
         /// <summary>
+        /// Current selected race opportunity (from RaceOpportunitySpawner).
+        /// </summary>
+        private RaceOpportunity _currentRaceOpportunity;
+
+        /// <summary>
         /// Database of all car definitions.
         /// </summary>
         [SerializeField]
@@ -267,6 +272,22 @@ namespace IdleCarCulture
         public PlayerProfile GetProfile()
         {
             return _playerProfile;
+        }
+
+        /// <summary>
+        /// Sets the current race opportunity.
+        /// </summary>
+        public void SetCurrentRaceOpportunity(RaceOpportunity opportunity)
+        {
+            _currentRaceOpportunity = opportunity;
+        }
+
+        /// <summary>
+        /// Gets the current race opportunity.
+        /// </summary>
+        public RaceOpportunity GetCurrentRaceOpportunity()
+        {
+            return _currentRaceOpportunity;
         }
 
         /// <summary>
