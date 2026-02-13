@@ -84,14 +84,15 @@ namespace IdleCarCulture
             var manager = GameManager.Instance;
             if (manager == null)
             {
-                Debug.LogError("GameManager not found.");
+                Debug.LogError("[RaceSceneController] GameManager.Instance is null. Cannot initialize race.");
+                SceneManager.LoadScene("City");
                 return;
             }
 
             raceOpportunity = manager.GetCurrentRaceOpportunity();
             if (raceOpportunity == null)
             {
-                Debug.LogError("No race opportunity set. Returning to City.");
+                Debug.LogError("[RaceSceneController] No race opportunity set in GameManager. Returning to City.");
                 SceneManager.LoadScene("City");
                 return;
             }
@@ -100,7 +101,7 @@ namespace IdleCarCulture
             var playerStats = manager.ComputeActiveStats();
             if (!playerStats.HasValue)
             {
-                Debug.LogError("Could not compute player stats. Returning to City.");
+                Debug.LogError("[RaceSceneController] Could not compute player stats. Returning to City.");
                 SceneManager.LoadScene("City");
                 return;
             }
@@ -115,6 +116,8 @@ namespace IdleCarCulture
 
             if (resultsPanel != null)
                 resultsPanel.SetActive(false);
+            else
+                Debug.LogWarning("[RaceSceneController] resultsPanel is not assigned in Inspector.");
         }
 
         private void GenerateOpponentStats()
@@ -139,21 +142,31 @@ namespace IdleCarCulture
         {
             if (minigamePanel != null)
                 minigamePanel.SetActive(true);
+            else
+                Debug.LogWarning("[RaceSceneController] minigamePanel is not assigned in Inspector.");
 
             // Setup tire heat phase
             if (tireHeatHoldButton != null)
                 tireHeatHoldButton.onClick.AddListener(OnTireHeatPhaseStart);
+            else
+                Debug.LogWarning("[RaceSceneController] tireHeatHoldButton is not assigned in Inspector.");
 
             // Setup launch phase
             if (launchTapButton != null)
                 launchTapButton.onClick.AddListener(OnLaunchTap);
+            else
+                Debug.LogWarning("[RaceSceneController] launchTapButton is not assigned in Inspector.");
 
             // Setup shifting phase
             if (shiftTapButton != null)
                 shiftTapButton.onClick.AddListener(OnShiftTap);
+            else
+                Debug.LogWarning("[RaceSceneController] shiftTapButton is not assigned in Inspector.");
 
             if (returnToCityButton != null)
                 returnToCityButton.onClick.AddListener(ReturnToCity);
+            else
+                Debug.LogWarning("[RaceSceneController] returnToCityButton is not assigned in Inspector.");
 
             StartCoroutine(RunMinigame());
         }
@@ -426,18 +439,28 @@ namespace IdleCarCulture
 
             if (resultsPanel != null)
                 resultsPanel.SetActive(true);
+            else
+                Debug.LogWarning("[RaceSceneController] resultsPanel is not assigned in Inspector. Results cannot be displayed.");
 
             if (resultTitleText != null)
                 resultTitleText.text = outcome.win ? "YOU WON!" : "YOU LOST";
+            else
+                Debug.LogWarning("[RaceSceneController] resultTitleText is not assigned in Inspector.");
 
             if (resultDetailsText != null)
                 resultDetailsText.text = $"Player PR: {outcome.playerPR:F0}\nOpponent PR: {outcome.opponentPR:F0}";
+            else
+                Debug.LogWarning("[RaceSceneController] resultDetailsText is not assigned in Inspector.");
 
             if (payoutText != null)
                 payoutText.text = $"Payout: ${payout:N0}";
+            else
+                Debug.LogWarning("[RaceSceneController] payoutText is not assigned in Inspector.");
 
             if (statsChangeText != null)
                 statsChangeText.text = $"Cred: +{credGain}\nReputation: +{repGain}";
+            else
+                Debug.LogWarning("[RaceSceneController] statsChangeText is not assigned in Inspector.");
 
             // Simple animation: move cars based on outcome
             if (outcome.win && playerCarSprite != null)

@@ -65,6 +65,8 @@ namespace IdleCarCulture
 
             // Apply prestige reduction
             var prestigeSystem = FindObjectOfType<PrestigeSystem>();
+            if (prestigeSystem == null)
+                Debug.LogWarning("[UpgradeSystem] PrestigeSystem not found. Prestige cost reduction will not apply.");
             float costMultiplier = prestigeSystem != null ? prestigeSystem.GetCostMultiplier() : 1f;
             long cost = (long)(upgradeDef.GetCostForNextLevel(currentLevel) * costMultiplier);
 
@@ -134,6 +136,8 @@ namespace IdleCarCulture
 
             // Calculate cost with prestige reduction
             var prestigeSystem = FindObjectOfType<PrestigeSystem>();
+            if (prestigeSystem == null)
+                Debug.LogWarning("[UpgradeSystem] PrestigeSystem not found. Prestige cost reduction will not apply.");
             float costMultiplier = prestigeSystem != null ? prestigeSystem.GetCostMultiplier() : 1f;
             long cost = (long)(upgradeDef.GetCostForNextLevel(currentLevel) * costMultiplier);
 
@@ -145,7 +149,13 @@ namespace IdleCarCulture
 
             // Spend money
             var economy = FindObjectOfType<EconomyManager>();
-            if (economy == null || !economy.TrySpend(cost))
+            if (economy == null)
+            {
+                Debug.LogError("[UpgradeSystem] EconomyManager not found. Cannot deduct upgrade cost.");
+                return false;
+            }
+            
+            if (!economy.TrySpend(cost))
             {
                 Debug.LogError("Failed to spend money for upgrade.");
                 return false;

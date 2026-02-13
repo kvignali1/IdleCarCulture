@@ -66,7 +66,11 @@ namespace IdleCarCulture
             if (upgradeSystem == null)
             {
                 upgradeSystem = gameObject.AddComponent<UpgradeSystem>();
+                Debug.LogWarning("[GarageUI] UpgradeSystem not found. Created new instance on this GameObject.");
             }
+
+            if (carListContent == null)
+                Debug.LogError("[GarageUI] carListContent is not assigned in Inspector. Car list will not display.");
 
             SetupUpgradeButtons();
             RefreshUI();
@@ -96,18 +100,28 @@ namespace IdleCarCulture
         {
             if (engineUpgradeButton != null)
                 engineUpgradeButton.onClick.AddListener(() => AttemptUpgrade(UpgradeType.Engine));
+            else
+                Debug.LogWarning("[GarageUI] engineUpgradeButton is not assigned in Inspector.");
 
             if (turboUpgradeButton != null)
                 turboUpgradeButton.onClick.AddListener(() => AttemptUpgrade(UpgradeType.Turbo));
+            else
+                Debug.LogWarning("[GarageUI] turboUpgradeButton is not assigned in Inspector.");
 
             if (transmissionUpgradeButton != null)
                 transmissionUpgradeButton.onClick.AddListener(() => AttemptUpgrade(UpgradeType.Transmission));
+            else
+                Debug.LogWarning("[GarageUI] transmissionUpgradeButton is not assigned in Inspector.");
 
             if (tiresUpgradeButton != null)
                 tiresUpgradeButton.onClick.AddListener(() => AttemptUpgrade(UpgradeType.Tires));
+            else
+                Debug.LogWarning("[GarageUI] tiresUpgradeButton is not assigned in Inspector.");
 
             if (suspensionUpgradeButton != null)
                 suspensionUpgradeButton.onClick.AddListener(() => AttemptUpgrade(UpgradeType.Suspension));
+            else
+                Debug.LogWarning("[GarageUI] suspensionUpgradeButton is not assigned in Inspector.");
         }
 
         private void AttemptUpgrade(UpgradeType upgradeType)
