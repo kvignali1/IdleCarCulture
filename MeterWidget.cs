@@ -185,6 +185,8 @@ namespace IdleCarCulture
         {
             if (fillImage != null)
                 fillImage.fillAmount = currentValue;
+            else
+                Debug.LogWarning("[MeterWidget] fillImage is not assigned in Inspector. Meter display will not update.");
         }
     }
 }
